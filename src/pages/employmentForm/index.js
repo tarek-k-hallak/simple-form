@@ -115,7 +115,6 @@ export default function EmploymentFrom() {
 		register,
 		handleSubmit,
 		setValue,
-		watch,
 		control,
 		formState: { errors },
 	} = useForm({
@@ -782,3 +781,4 @@ export default function EmploymentFrom() {
 }
 
 // https://github.com/react-hook-form/react-hook-form/tree/master/examples
+// https://codesandbox.io/s/controlled-field-array-forked-svct5t?file=/src/App.tsx
