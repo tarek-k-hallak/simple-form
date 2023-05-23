@@ -70,14 +70,20 @@ const schema = yup.object().shape({
 	birth: yup.date().typeError('يرجى ادخال تاريخ صحيح').required('هذا الحقل مطلوب'),
 	gender: yup.string().required('هذا الحقل مطلوب'),
 	familial_status: yup.string().required('هذا الحقل مطلوب'),
-	Obligatory_service: yup.string().required('هذا الحقل مطلوب'),
-	count_of_years: yup.string().required('هذا الحقل مطلوب'),
+	Obligatory_service: yup.string(),
+	count_of_years: yup.string(),
 	current_situation: yup.string().required('هذا الحقل مطلوب'),
-	position_type: yup.string().required('هذا الحقل مطلوب'),
-	related_add: yup.number().required('هذا الحقل مطلوب'),
+	position_type: yup.string(),
+	related_add: yup.string().required('هذا الحقل مطلوب'),
 	tech_skills: yup.array(),
 	experiences: yup.array().min(1, 'اضف خبرة واحدة على الاقل'),
 	qualifications: yup.array().min(1, 'اضف مهارة واحدة على الاقل'),
+	question1: yup.string().required('هذا الحقل مطلوب'),
+	sch: yup.string(),
+	y_count: yup.number(),
+	question2: yup.string().required('هذا الحقل مطلوب'),
+	question3: yup.string().required('هذا الحقل مطلوب'),
+	Question: yup.string().required('هذا الحقل مطلوب'),
 });
 
 const defaultValues = {
@@ -86,7 +92,7 @@ const defaultValues = {
 	phone_number1: '',
 	phone_number2: '',
 	birth: '',
-	gender: 'ذكر',
+	gender: '',
 	familial_status: '',
 	related_add: '',
 	Obligatory_service: '',
@@ -97,12 +103,12 @@ const defaultValues = {
 	other_tech_skills: { title: '', state: false },
 	experiences: [],
 	qualifications: [],
-	question1: 'لا',
+	question1: '',
 	sch: '',
 	y_count: '',
-	question2: 'لا',
-	question3: 'لا',
-	Question: 'لا',
+	question2: '',
+	question3: '',
+	Question: '',
 };
 
 export default function EmploymentFrom() {
@@ -115,15 +121,14 @@ export default function EmploymentFrom() {
 		register,
 		handleSubmit,
 		setValue,
+		watch,
 		control,
-		getValues,
 		formState: { errors },
 	} = useForm({
 		mode: 'onBlur',
 		resolver: yupResolver(schema),
 		defaultValues,
 	});
-	console.log(getValues().tech_skills);
 
 	const { fields, append } = useFieldArray({
 		control,
@@ -159,9 +164,13 @@ export default function EmploymentFrom() {
 	}, [employmentFrom]);
 
 	useEffect(() => {
-		fetch('http://172.16.1.219:8069/recruitment/website')
-			.then((response) => response.json())
-			.then((data) => setAllAddress(data.address));
+		try {
+			fetch('http://172.16.1.219:8069/recruitment/website')
+				.then((response) => response.json())
+				.then((data) => setAllAddress(data.address));
+		} catch (err) {
+			alert(err);
+		}
 	}, []);
 
 	return (
@@ -419,67 +428,76 @@ export default function EmploymentFrom() {
 						</FormControl>
 					</Grid>
 
-					{/* Obligatory_service */}
-					<Grid item xs={5}>
-						<FormControl fullWidth>
-							<InputLabel id='Obligatory_service'>الخدمة الإلزامية</InputLabel>
-							<Controller
-								name='Obligatory_service'
-								control={control}
-								render={({ field: { value, onChange } }) => (
-									<Select
-										value={value}
-										label={'الخدمة الإلزامية'}
-										onChange={onChange}
-										error={Boolean(errors.Obligatory_service)}
-										aria-describedby='Obligatory_service'>
-										{OBLIGATORY_SERVICE.map((item) => (
-											<MenuItem key={item.label} value={item.value}>
-												{item.label}
-											</MenuItem>
-										))}
-									</Select>
-								)}
-							/>
-							{errors.Obligatory_service && (
-								<FormHelperText
-									sx={{ color: 'error.main' }}
-									id='Obligatory_service'>
-									{errors.Obligatory_service.message}
-								</FormHelperText>
+					{watch().gender === 'ذكر' && (
+						<>
+							<Grid item xs={5}>
+								<FormControl fullWidth>
+									<InputLabel id='Obligatory_service'>
+										الخدمة الإلزامية
+									</InputLabel>
+									<Controller
+										name='Obligatory_service'
+										control={control}
+										render={({ field: { value, onChange } }) => (
+											<Select
+												value={value}
+												label={'الخدمة الإلزامية'}
+												onChange={onChange}
+												error={Boolean(errors.Obligatory_service)}
+												aria-describedby='Obligatory_service'>
+												{OBLIGATORY_SERVICE.map((item) => (
+													<MenuItem key={item.label} value={item.value}>
+														{item.label}
+													</MenuItem>
+												))}
+											</Select>
+										)}
+									/>
+									{errors.Obligatory_service && (
+										<FormHelperText
+											sx={{ color: 'error.main' }}
+											id='Obligatory_service'>
+											{errors.Obligatory_service.message}
+										</FormHelperText>
+									)}
+								</FormControl>
+							</Grid>
+							{watch().Obligatory_service === 'مؤجل' && (
+								<Grid item xs={5}>
+									<FormControl fullWidth>
+										<InputLabel id='count_of_years'>عدد السنوات</InputLabel>
+										<Controller
+											name='count_of_years'
+											control={control}
+											render={({ field: { value, onChange } }) => (
+												<Select
+													value={value}
+													label={'عدد السنوات'}
+													onChange={onChange}
+													error={Boolean(errors.Obligatory_service)}
+													aria-describedby='Obligatory_service'>
+													{OBLIGATORY_SERVICE[4].type.map((item) => (
+														<MenuItem
+															key={item.label}
+															value={item.value}>
+															{item.label}
+														</MenuItem>
+													))}
+												</Select>
+											)}
+										/>
+										{errors.count_of_years && (
+											<FormHelperText
+												sx={{ color: 'error.main' }}
+												id='count_of_years'>
+												{errors.count_of_years.message}
+											</FormHelperText>
+										)}
+									</FormControl>
+								</Grid>
 							)}
-						</FormControl>
-					</Grid>
-
-					{/* Obligatory_service ? count_of_years */}
-					<Grid item xs={5}>
-						<FormControl fullWidth>
-							<InputLabel id='count_of_years'>عدد السنوات</InputLabel>
-							<Controller
-								name='count_of_years'
-								control={control}
-								render={({ field: { value, onChange } }) => (
-									<Select
-										value={value}
-										label={'عدد السنوات'}
-										onChange={onChange}
-										error={Boolean(errors.Obligatory_service)}
-										aria-describedby='Obligatory_service'>
-										{OBLIGATORY_SERVICE[4].type.map((item) => (
-											<MenuItem key={item.label} value={item.value}>
-												{item.label}
-											</MenuItem>
-										))}
-									</Select>
-								)}
-							/>
-							{errors.count_of_years && (
-								<FormHelperText sx={{ color: 'error.main' }} id='count_of_years'>
-									{errors.count_of_years.message}
-								</FormHelperText>
-							)}
-						</FormControl>
-					</Grid>
+						</>
+					)}
 
 					{/* current_situation */}
 					<Grid item xs={5}>
@@ -511,47 +529,48 @@ export default function EmploymentFrom() {
 						</FormControl>
 					</Grid>
 
-					{/* position_type */}
-					<Grid item xs={5}>
-						<FormControl fullWidth>
-							<InputLabel id='position_type'>متفرغ جزئياً</InputLabel>
-							<Controller
-								name='position_type'
-								control={control}
-								render={({ field: { value, onChange } }) => (
-									<Select
-										value={value}
-										label={'متفرغ جزئياً'}
-										onChange={onChange}
-										error={Boolean(errors.position_type)}
-										aria-describedby='position_type'>
-										{CURRENT_SITUATION[1].type.map((item) => (
-											<MenuItem key={item.label} value={item.value}>
-												{item.label}
-											</MenuItem>
-										))}
-									</Select>
+					{watch().current_situation === 'متفرغ جزئياً' && (
+						// position_type
+						<Grid item xs={5}>
+							<FormControl fullWidth>
+								<InputLabel id='position_type'>الوضع الحالي</InputLabel>
+								<Controller
+									name='position_type'
+									control={control}
+									render={({ field: { value, onChange } }) => (
+										<Select
+											value={value}
+											label={'الوضع الحالي'}
+											onChange={onChange}
+											error={Boolean(errors.position_type)}
+											aria-describedby='position_type'>
+											{CURRENT_SITUATION[1].type.map((item) => (
+												<MenuItem key={item.label} value={item.value}>
+													{item.label}
+												</MenuItem>
+											))}
+										</Select>
+									)}
+								/>
+								{errors.current_situation && (
+									<FormHelperText
+										sx={{ color: 'error.main' }}
+										id='current_situation'>
+										{errors.current_situation.message}
+									</FormHelperText>
 								)}
-							/>
-							{errors.current_situation && (
-								<FormHelperText sx={{ color: 'error.main' }} id='current_situation'>
-									{errors.current_situation.message}
-								</FormHelperText>
-							)}
-						</FormControl>
-					</Grid>
+							</FormControl>
+						</Grid>
+					)}
 
 					{/* tech_skills */}
-					<Grid item xs={5}>
+					<Grid item xs={12}>
 						<FormControl fullWidth>
 							<FormLabel id={`tech_skills`}>مهارات تقنية اخرى</FormLabel>
 							<FormGroup>
 								{fields.map((field, index) => (
 									<Box key={index}>
-										<Checkbox
-											{...register(`tech_skills.${index}.state`)}
-											type='checkbox'
-										/>
+										<Checkbox {...register(`tech_skills.${index}.state`)} />
 										<TextField
 											disabled
 											placeholder='Other Tech'
@@ -574,6 +593,7 @@ export default function EmploymentFrom() {
 							</Box>
 							<Button
 								variant='contained'
+								color='success'
 								type='button'
 								onClick={addNewTechSkill}
 								sx={{ mt: 5, width: 80 }}>
@@ -585,6 +605,14 @@ export default function EmploymentFrom() {
 					{/* Experiences */}
 					<Grid item xs={12}>
 						<Experiences
+							setEmploymentFrom={setEmploymentFrom}
+							employmentFrom={employmentFrom}
+						/>
+					</Grid>
+
+					{/* Qualifications */}
+					<Grid item xs={12}>
+						<Qualifications
 							setEmploymentFrom={setEmploymentFrom}
 							employmentFrom={employmentFrom}
 						/>
@@ -663,7 +691,7 @@ export default function EmploymentFrom() {
 					</Grid>
 
 					{/* question1 */}
-					<Grid item xs={12}>
+					<Grid item xs={3.5}>
 						<FormControl
 							fullWidth
 							sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
@@ -696,68 +724,68 @@ export default function EmploymentFrom() {
 								</FormHelperText>
 							)}
 						</FormControl>
-					</Grid>
-
-					{/* sch */}
-					<Grid item xs={3.5}>
-						<Controller
-							name={`sch`}
-							control={control}
-							render={({ field: { onChange, onBlur, value, ref } }) => (
-								<TextField
-									fullWidth
-									label={'المدرسة'}
-									onBlur={onBlur}
-									onChange={onChange}
-									value={value}
-									type='text'
-									variant='filled'
-									ref={ref}
-									error={Boolean(errors.sch)}
-								/>
-							)}
-						/>
-						{errors.sch && (
-							<FormHelperText sx={{ color: 'error.main' }}>
-								{errors.sch.message}
+						{errors.question1 && (
+							<FormHelperText sx={{ color: 'error.main' }} id='related_add'>
+								{errors.question1.message}
 							</FormHelperText>
 						)}
 					</Grid>
 
-					{/* y_count */}
-
-					<Grid item xs={3.5}>
-						<Controller
-							name={`y_count`}
-							control={control}
-							render={({ field: { onChange, onBlur, value, ref } }) => (
-								<TextField
-									fullWidth
-									label={'عدد السنوات'}
-									onBlur={onBlur}
-									onChange={onChange}
-									value={value}
-									type='number'
-									variant='filled'
-									ref={ref}
-									error={Boolean(errors.y_count)}
+					{watch().question1 === 'نعم' && (
+						<>
+							{/* sch */}
+							<Grid item xs={3.5}>
+								<Controller
+									name={`sch`}
+									control={control}
+									render={({ field: { onChange, onBlur, value, ref } }) => (
+										<TextField
+											fullWidth
+											label={'المدرسة'}
+											onBlur={onBlur}
+											onChange={onChange}
+											value={value}
+											type='text'
+											variant='filled'
+											ref={ref}
+											error={Boolean(errors.sch)}
+										/>
+									)}
 								/>
-							)}
-						/>
-						{errors.y_count && (
-							<FormHelperText sx={{ color: 'error.main' }}>
-								{errors.y_count.message}
-							</FormHelperText>
-						)}
-					</Grid>
+								{errors.sch && (
+									<FormHelperText sx={{ color: 'error.main' }}>
+										{errors.sch.message}
+									</FormHelperText>
+								)}
+							</Grid>
 
-					{/* Qualifications */}
-					<Grid item xs={12}>
-						<Qualifications
-							setEmploymentFrom={setEmploymentFrom}
-							employmentFrom={employmentFrom}
-						/>
-					</Grid>
+							{/* y_count */}
+							<Grid item xs={3.5}>
+								<Controller
+									name={`y_count`}
+									control={control}
+									render={({ field: { onChange, onBlur, value, ref } }) => (
+										<TextField
+											fullWidth
+											label={'عدد السنوات'}
+											onBlur={onBlur}
+											onChange={onChange}
+											value={value}
+											type='number'
+											variant='filled'
+											ref={ref}
+											error={Boolean(errors.y_count)}
+										/>
+									)}
+								/>
+								{errors.y_count && (
+									<FormHelperText sx={{ color: 'error.main' }}>
+										{errors.y_count.message}
+									</FormHelperText>
+								)}
+							</Grid>
+						</>
+					)}
 
 					{/* Question */}
 					<Grid item xs={12}>
@@ -789,12 +817,16 @@ export default function EmploymentFrom() {
 									</RadioGroup>
 								)}
 							/>
-							{errors.Question && (
-								<FormHelperText sx={{ color: 'error.main' }} id='Question'>
-									{errors.Question.message}
-								</FormHelperText>
-							)}
 						</FormControl>
+						{errors.Question && (
+							<FormHelperText
+								sx={{
+									color: 'error.main',
+								}}
+								id='Question'>
+								{errors.Question.message}
+							</FormHelperText>
+						)}
 					</Grid>
 
 					<Grid item xs={12} justifyContent={'center'} alignItems={'center'}>
