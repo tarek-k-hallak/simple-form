@@ -16,8 +16,6 @@ import TextField from '@mui/material/TextField';
 import FormHelperText from '@mui/material/FormHelperText';
 import Container from '@mui/material/Container';
 import { styled } from '@mui/material/styles';
-import Chip from '@mui/material/Chip';
-import Card from '@mui/material/Card';
 import RadioGroup from '@mui/material/RadioGroup';
 import Radio from '@mui/material/Radio';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -27,7 +25,7 @@ import FormGroup from '@mui/material/FormGroup';
 // ** Third Party
 import axios from 'axios';
 import * as yup from 'yup';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import DatePicker from 'react-datepicker';
 
@@ -49,6 +47,7 @@ import {
 	YES_NO_QUESTION,
 	TECH_SKILLS,
 } from 'src/const/dropDownList';
+import { Checkbox } from '@mui/material';
 
 // Styled component for the upload image inside the dropzone area
 const Column = styled(Box)(({ theme }) => ({
@@ -76,7 +75,7 @@ const schema = yup.object().shape({
 	current_situation: yup.string().required('هذا الحقل مطلوب'),
 	position_type: yup.string().required('هذا الحقل مطلوب'),
 	related_add: yup.number().required('هذا الحقل مطلوب'),
-	tech_skills: yup.array().min(1, 'اضف مهارة واحدة على الاقل'),
+	tech_skills: yup.array(),
 	experiences: yup.array().min(1, 'اضف خبرة واحدة على الاقل'),
 	qualifications: yup.array().min(1, 'اضف مهارة واحدة على الاقل'),
 });
@@ -94,7 +93,8 @@ const defaultValues = {
 	count_of_years: '',
 	current_situation: '',
 	position_type: '',
-	tech_skills: [],
+	tech_skills: TECH_SKILLS,
+	other_tech_skills: { title: '', state: false },
 	experiences: [],
 	qualifications: [],
 	question1: 'لا',
@@ -116,13 +116,19 @@ export default function EmploymentFrom() {
 		handleSubmit,
 		setValue,
 		control,
+		getValues,
 		formState: { errors },
 	} = useForm({
 		mode: 'onBlur',
 		resolver: yupResolver(schema),
 		defaultValues,
 	});
-	// console.log(watch());
+	console.log(getValues().tech_skills);
+
+	const { fields, append } = useFieldArray({
+		control,
+		name: 'tech_skills',
+	});
 
 	// ** Functions
 	// Submit to API
@@ -137,6 +143,14 @@ export default function EmploymentFrom() {
 			console.log(res);
 		};
 		postData();
+	};
+
+	const addNewTechSkill = () => {
+		append({
+			title: getValues().title,
+			state: getValues().state ? true : false,
+		});
+		setValue('other_tech_skills', { title: '', state: false });
 	};
 
 	useEffect(() => {
@@ -528,27 +542,43 @@ export default function EmploymentFrom() {
 					</Grid>
 
 					{/* tech_skills */}
-					<Grid item xs={12}>
+					<Grid item xs={5}>
 						<FormControl fullWidth>
 							<FormLabel id={`tech_skills`}>مهارات تقنية اخرى</FormLabel>
-							<FormGroup row>
-								{TECH_SKILLS.map((item) => (
-									<FormControlLabel
-										key={item.value}
-										value={item.value}
-										label={item.label}
-										labelPlacement='bottom'
-										control={
-											<input {...register('tech_skills')} type='checkbox' />
-										}
-									/>
+							<FormGroup>
+								{fields.map((field, index) => (
+									<Box key={index}>
+										<Checkbox
+											{...register(`tech_skills.${index}.state`)}
+											type='checkbox'
+										/>
+										<TextField
+											disabled
+											placeholder='Other Tech'
+											{...register(`tech_skills.${index}.title`)}
+										/>
+									</Box>
 								))}
+								{errors.tech_skills && (
+									<FormHelperText sx={{ color: 'error.main' }}>
+										{errors.tech_skills.message}
+									</FormHelperText>
+								)}
 							</FormGroup>
-							{errors.tech_skills && (
-								<FormHelperText sx={{ color: 'error.main' }}>
-									{errors.tech_skills.message}
-								</FormHelperText>
-							)}
+							<Box>
+								<Checkbox {...register(`other_tech_skills.state`)} />
+								<TextField
+									placeholder='Other'
+									{...register(`other_tech_skills.title`)}
+								/>
+							</Box>
+							<Button
+								variant='contained'
+								type='button'
+								onClick={addNewTechSkill}
+								sx={{ mt: 5, width: 80 }}>
+								Append
+							</Button>
 						</FormControl>
 					</Grid>
 

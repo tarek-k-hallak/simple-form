@@ -46,10 +46,10 @@ export const CURRENT_SITUATION = [
 ];
 
 export const TECH_SKILLS = [
-	{ value: 'تصميم فيديوهات', label: 'تصميم فيديوهات' },
-	{ value: 'تصميم صور', label: 'تصميم صور' },
-	{ value: 'تصميم العاب إلكترونية', label: 'تصميم العاب إلكترونية' },
-	{ value: 'تصميم اختبارات إلكترونية', label: 'تصميم اختبارات إلكترونية' },
+	{ title: 'تصميم فيديوهات', state: false },
+	{ title: 'تصميم صور', state: false },
+	{ title: 'تصميم العاب إلكترونية', state: false },
+	{ title: 'تصميم اختبارات إلكترونية', state: false },
 ];
 
 export const EXPERIENCES_SUBJECT = [
