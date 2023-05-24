@@ -27,6 +27,7 @@ import * as yup from 'yup';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import DatePicker from 'react-datepicker';
+import { useFieldArray } from 'react-hook-form';
 
 import {
 	ADDRESS,
@@ -48,91 +49,59 @@ const defaultValues = {
 	grant_year: '',
 };
 
-const Qualifications = ({ setEmploymentFrom, employmentFrom }) => {
+const Qualifications = ({ control, register, errors }) => {
 	// ** Hooks
-	const {
-		handleSubmit,
+	const { fields, append, remove } = useFieldArray({
 		control,
-		getValues,
-		reset,
-		formState: { errors },
-	} = useForm({
-		mode: 'onBlur',
-		resolver: yupResolver(schema),
-		defaultValues,
+		name: 'qualifications',
 	});
 
-	const addNewQualifications = () => {
-		const newQualArray = [];
-		newQualArray.push(...employmentFrom.qualifications);
-		newQualArray.push(getValues());
-		setEmploymentFrom({
-			...employmentFrom,
-			qualifications: newQualArray,
+	// ** FUNCTIONS
+	const addNewTechSkill = () => {
+		append({
+			Certificate: '',
+			grant_year: '',
 		});
-		reset();
 	};
 
-	const deleteCard = (Certificate) => {
-		let newQualArray = [];
-		newQualArray = employmentFrom.qualifications.filter(
-			(card) => card.Certificate !== Certificate
-		);
-		setEmploymentFrom({
-			...employmentFrom,
-			qualifications: newQualArray,
-		});
+	const deleteCard = (i) => {
+		remove(i);
 	};
 
 	return (
-		<Box mt={5}>
+		<Card sx={{ p: 2 }}>
 			<Grid container justifyContent={'space-between'}>
 				<Grid item xs={10}>
-					<Typography variant='h6' sx={{ fontWeight: 'bold' }}>
-						المؤهلات العلمية:
+					<Typography variant='h4' sx={{ fontWeight: 'bold' }}>
+						المؤهلات العلمية
 					</Typography>
 				</Grid>
 
 				<Grid item xs={1}>
-					<Button variant='contained' color='success' onClick={addNewQualifications}>
+					<Button variant='contained' color='success' onClick={addNewTechSkill}>
 						+
 					</Button>
 				</Grid>
 			</Grid>
 
-			<Card sx={{ padding: 2, mb: 5 }}>
-				<Grid container justifyContent={'space-between'} rowGap={5}>
-					{/* Certificate */}
-					<Grid item xs={5}>
-						<Controller
-							name={`Certificate`}
-							control={control}
-							render={({ field: { onChange, onBlur, value, ref } }) => (
-								<TextField
-									fullWidth
-									label={'الشهادة'}
-									onBlur={onBlur}
-									onChange={onChange}
-									value={value}
-									type='text'
-									variant='filled'
-									ref={ref}
-									error={Boolean(errors.Certificate)}
-								/>
-							)}
-						/>
-						{errors.Certificate && (
-							<FormHelperText sx={{ color: 'error.main' }}>
-								{errors.Certificate.message}
-							</FormHelperText>
-						)}
-					</Grid>
+			{fields.map((field, i) => (
+				<Card key={field.id} sx={{ padding: 2, mt: 5 }}>
+					<Grid container justifyContent={'space-between'} rowGap={5}>
+						{/* Certificate */}
+						<Grid item xs={5}>
+							<TextField
+								{...register(`qualifications.${i}.Certificate`)}
+								fullWidth
+								label={'الشهادة'}
+								type='text'
+								variant='filled'
+							/>
+						</Grid>
 
-					{/* grant_year */}
-					<Grid item xs={5}>
-						<Box>
+						{/* grant_year */}
+						<Grid item xs={5}>
 							<Controller
-								name='grant_year'
+								name={`qualifications.${i}.grant_year`}
 								control={control}
 								render={({ field: { value, onChange } }) => (
 									<DatePicker
@@ -145,7 +114,6 @@ const Qualifications = ({ setEmploymentFrom, employmentFrom }) => {
 											<TextField
 												fullWidth
 												value={value}
-												onChange={onChange}
 												icon={'ic:round-access-time'}
 												label={'سنة المنح'}
 												error={Boolean(errors.grant_year)}
@@ -154,67 +122,23 @@ const Qualifications = ({ setEmploymentFrom, employmentFrom }) => {
 									/>
 								)}
 							/>
-							{errors.grant_year && (
-								<FormHelperText
-									sx={{
-										color: 'error.main',
-									}}>
-									{errors.grant_year.message}
-								</FormHelperText>
-							)}
-						</Box>
-					</Grid>
-				</Grid>
-			</Card>
+						</Grid>
 
-			{employmentFrom.qualifications.map((card, index) => (
-				<Card key={index} sx={{ padding: 2, mt: 5 }}>
-					<Grid container justifyContent={'space-between'} rowGap={5}>
-						<Grid item xs={12}>
-							<Button
-								variant='contained'
-								color='error'
-								onClick={() => deleteCard(card.Certificate)}>
+						<Grid item xs={10}></Grid>
+						<Grid item xs={1}>
+							<Button variant='contained' color='error' onClick={() => deleteCard(i)}>
 								x
 							</Button>
-						</Grid>
-						{/* Certificate */}
-						<Grid item xs={5}>
-							<TextField
-								fullWidth
-								disabled
-								label={'الشهادة'}
-								value={card.Certificate}
-								type='text'
-								variant='filled'
-							/>
-						</Grid>
-
-						{/* grant_year */}
-						<Grid item xs={5}>
-							<Box>
-								<DatePicker
-									disabled
-									selected={card.grant_year}
-									showYearDropdown
-									showMonthDropdown
-									onChange={(e) => onChange(e)}
-									placeholderText='MM/DD/YYYY'
-									customInput={
-										<TextField
-											fullWidth
-											value={card.grant_year}
-											icon={'ic:round-access-time'}
-											label={'سنة المنح'}
-										/>
-									}
-								/>
-							</Box>
 						</Grid>
 					</Grid>
 				</Card>
 			))}
-		</Box>
+			{errors.qualifications && (
+				<FormHelperText sx={{ color: 'error.main' }}>
+					{errors.qualifications.message}
+				</FormHelperText>
+			)}
+		</Card>
 	);
 };
 

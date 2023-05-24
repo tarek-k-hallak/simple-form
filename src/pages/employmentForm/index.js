@@ -56,31 +56,41 @@ const Column = styled(Box)(({ theme }) => ({
 	width: '100%',
 }));
 
+const phoneRegExp = /09[0-9]{8}/;
+
 const schema = yup.object().shape({
 	f_name: yup.string().required('هذا الحقل مطلوب'),
 	l_name: yup.string().required('هذا الحقل مطلوب'),
 	phone_number1: yup
 		.string()
 		.min(10, 'يجب ان يتألف الحقل من عشرة ارقام بالضبط')
-		.max(10, 'يجب ان يتألف الحقل من عشرة ارقام بالضبط'),
+		.max(10, 'يجب ان يتألف الحقل من عشرة ارقام بالضبط')
+		.matches(phoneRegExp, 'يرجى ادخال رقم موبايل صحيح'),
 	phone_number2: yup
 		.string()
-		.min(10, ' يجب ان يتألف الحقل من عشرة ارقام بالضبط')
-		.max(10, 'يجب ان يتألف الحقل من عشرة ارقام بالضبط'),
+		.min(10, 'يجب ان يتألف الحقل من عشرة ارقام بالضبط')
+		.max(10, 'يجب ان يتألف الحقل من عشرة ارقام بالضبط')
+		.matches(phoneRegExp, 'يرجى ادخال رقم موبايل صحيح'),
 	birth: yup.date().typeError('يرجى ادخال تاريخ صحيح').required('هذا الحقل مطلوب'),
 	gender: yup.string().required('هذا الحقل مطلوب'),
 	familial_status: yup.string().required('هذا الحقل مطلوب'),
 	Obligatory_service: yup.string(),
 	count_of_years: yup.string(),
+
 	current_situation: yup.string().required('هذا الحقل مطلوب'),
 	position_type: yup.string(),
+
 	related_add: yup.string().required('هذا الحقل مطلوب'),
 	tech_skills: yup.array(),
+	other_skills: yup.array(),
+
 	experiences: yup.array().min(1, 'اضف خبرة واحدة على الاقل'),
 	qualifications: yup.array().min(1, 'اضف مهارة واحدة على الاقل'),
+
 	question1: yup.string().required('هذا الحقل مطلوب'),
 	sch: yup.string(),
-	y_count: yup.number(),
+	y_count: yup.string(),
+
 	question2: yup.string().required('هذا الحقل مطلوب'),
 	question3: yup.string().required('هذا الحقل مطلوب'),
 	Question: yup.string().required('هذا الحقل مطلوب'),
@@ -100,7 +110,7 @@ const defaultValues = {
 	current_situation: '',
 	position_type: '',
 	tech_skills: TECH_SKILLS,
-	other_tech_skills: { title: '', state: false },
+	other_skills: [{ title: '', state: false }],
 	experiences: [],
 	qualifications: [],
 	question1: '',
@@ -113,7 +123,6 @@ const defaultValues = {
 
 export default function EmploymentFrom() {
 	// ** State
-	const [employmentFrom, setEmploymentFrom] = useState(defaultValues);
 	const [allAddress, setAllAddress] = useState([]);
 
 	// ** Hooks
@@ -122,6 +131,7 @@ export default function EmploymentFrom() {
 		handleSubmit,
 		setValue,
 		watch,
+		getValues,
 		control,
 		formState: { errors },
 	} = useForm({
@@ -132,8 +142,10 @@ export default function EmploymentFrom() {
 
 	const { fields, append } = useFieldArray({
 		control,
-		name: 'tech_skills',
+		name: 'other_skills',
 	});
+
+	console.log('watch form', watch());
 
 	// ** Functions
 	// Submit to API
@@ -155,13 +167,7 @@ export default function EmploymentFrom() {
 			title: getValues().title,
 			state: getValues().state ? true : false,
 		});
-		setValue('other_tech_skills', { title: '', state: false });
 	};
-
-	useEffect(() => {
-		setValue('experiences', employmentFrom.experiences);
-		setValue('qualifications', employmentFrom.qualifications);
-	}, [employmentFrom]);
 
 	useEffect(() => {
 		try {
@@ -176,7 +182,8 @@ export default function EmploymentFrom() {
 	return (
 		<form noValidate autoComplete='off' onSubmit={handleSubmit(onSubmit)}>
 			<Container>
-				<Grid container columnGap={5} rowGap={2}>
+				<Box sx={{ bgcolor: 'gray', height: 150 }}></Box>
+				<Grid container columnGap={5} rowGap={2} my={5}>
 					<Grid item xs={12}>
 						<Typography variant='h4'>طلب توظيف</Typography>
 						<Typography variant='h6'>
@@ -420,12 +427,12 @@ export default function EmploymentFrom() {
 									</RadioGroup>
 								)}
 							/>
-							{errors.gender && (
-								<FormHelperText sx={{ color: 'error.main' }} id='gender'>
-									{errors.gender.message}
-								</FormHelperText>
-							)}
 						</FormControl>
+						{errors.gender && (
+							<FormHelperText sx={{ color: 'error.main' }} id='gender'>
+								{errors.gender.message}
+							</FormHelperText>
+						)}
 					</Grid>
 
 					{watch().gender === 'ذكر' && (
@@ -566,63 +573,83 @@ export default function EmploymentFrom() {
 					{/* tech_skills */}
 					<Grid item xs={12}>
 						<FormControl fullWidth>
-							<FormLabel id={`tech_skills`}>مهارات تقنية اخرى</FormLabel>
+							<FormLabel id={`tech_skills`}>مهارات تقنية</FormLabel>
+							{TECH_SKILLS.map((item, i) => (
+								<Box
+									key={i}
+									sx={{
+										display: 'flex',
+										flexDirection: 'row',
+										alignItems: 'center',
+									}}>
+									<Checkbox {...register(`tech_skills.${i}.state`)} />
+									<Typography>{item.title}</Typography>
+								</Box>
+							))}
+						</FormControl>
+						{errors.tech_skills && (
+							<FormHelperText sx={{ color: 'error.main' }}>
+								{errors.tech_skills.message}
+							</FormHelperText>
+						)}
+					</Grid>
+
+					{/* other_skills */}
+					<Grid item xs={12}>
+						<FormControl fullWidth>
+							<FormLabel id={`other_skills`}>مهارات اخرى</FormLabel>
 							<FormGroup>
-								{fields.map((field, index) => (
-									<Box key={index}>
-										<Checkbox {...register(`tech_skills.${index}.state`)} />
-										<TextField
-											disabled
-											placeholder='Other Tech'
-											{...register(`tech_skills.${index}.title`)}
-										/>
+								<Box
+									sx={{
+										display: 'flex',
+										flexDirection: 'row',
+										alignItems: 'flex-end',
+										gap: 2,
+									}}>
+									<Box>
+										{fields.map((field, i) => (
+											<Box key={field.id}>
+												<Checkbox
+													{...register(`other_skills.${i}.state`)}
+												/>
+												<TextField
+													placeholder='Skill Name'
+													{...register(`other_skills.${i}.title`)}
+												/>
+											</Box>
+										))}
 									</Box>
-								))}
-								{errors.tech_skills && (
-									<FormHelperText sx={{ color: 'error.main' }}>
-										{errors.tech_skills.message}
-									</FormHelperText>
-								)}
+									<Button
+										variant='contained'
+										color='success'
+										type='button'
+										onClick={addNewTechSkill}
+										sx={{ mb: 1 }}>
+										Append
+									</Button>
+								</Box>
 							</FormGroup>
-							<Box>
-								<Checkbox {...register(`other_tech_skills.state`)} />
-								<TextField
-									placeholder='Other'
-									{...register(`other_tech_skills.title`)}
-								/>
-							</Box>
-							<Button
-								variant='contained'
-								color='success'
-								type='button'
-								onClick={addNewTechSkill}
-								sx={{ mt: 5, width: 80 }}>
-								Append
-							</Button>
+							{errors.other_skills && (
+								<FormHelperText sx={{ color: 'error.main' }}>
+									{errors.other_skills.message}
+								</FormHelperText>
+							)}
 						</FormControl>
 					</Grid>
 
 					{/* Experiences */}
 					<Grid item xs={12}>
-						<Experiences
-							setEmploymentFrom={setEmploymentFrom}
-							employmentFrom={employmentFrom}
-						/>
+						<Experiences control={control} register={register} errors={errors} />
 					</Grid>
 
 					{/* Qualifications */}
 					<Grid item xs={12}>
-						<Qualifications
-							setEmploymentFrom={setEmploymentFrom}
-							employmentFrom={employmentFrom}
-						/>
+						<Qualifications control={control} register={register} errors={errors} />
 					</Grid>
 
 					{/* question3 */}
 					<Grid item xs={12}>
-						<FormControl
-							fullWidth
-							sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+						<FormControl fullWidth>
 							<FormLabel id='question3'>هل لديك شهادة ICDL؟</FormLabel>
 							<Controller
 								name='question3'
@@ -646,19 +673,17 @@ export default function EmploymentFrom() {
 									</RadioGroup>
 								)}
 							/>
-							{errors.question3 && (
-								<FormHelperText sx={{ color: 'error.main' }} id='question3'>
-									{errors.question3.message}
-								</FormHelperText>
-							)}
 						</FormControl>
+						{errors.question3 && (
+							<FormHelperText sx={{ color: 'error.main' }} id='question3'>
+								{errors.question3.message}
+							</FormHelperText>
+						)}
 					</Grid>
 
 					{/* question2 */}
 					<Grid item xs={12}>
-						<FormControl
-							fullWidth
-							sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+						<FormControl fullWidth>
 							<FormLabel id='question2'>هل لديك خبرة باستخدام الكومبيوتر؟</FormLabel>
 							<Controller
 								name='question2'
@@ -682,19 +707,17 @@ export default function EmploymentFrom() {
 									</RadioGroup>
 								)}
 							/>
-							{errors.question2 && (
-								<FormHelperText sx={{ color: 'error.main' }} id='question2'>
-									{errors.question2.message}
-								</FormHelperText>
-							)}
 						</FormControl>
+						{errors.question2 && (
+							<FormHelperText sx={{ color: 'error.main' }} id='question2'>
+								{errors.question2.message}
+							</FormHelperText>
+						)}
 					</Grid>
 
 					{/* question1 */}
 					<Grid item xs={3.5}>
-						<FormControl
-							fullWidth
-							sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+						<FormControl fullWidth>
 							<FormLabel id='question1'>هل سبق لك التعليم عن بعد ؟</FormLabel>
 							<Controller
 								name='question1'
@@ -711,18 +734,13 @@ export default function EmploymentFrom() {
 											<FormControlLabel
 												key={item.value}
 												value={item.value}
-												control={<Radio />}
 												label={item.label}
+												control={<Radio />}
 											/>
 										))}
 									</RadioGroup>
 								)}
 							/>
-							{errors.question1 && (
-								<FormHelperText sx={{ color: 'error.main' }} id='question1'>
-									{errors.question1.message}
-								</FormHelperText>
-							)}
 						</FormControl>
 						{errors.question1 && (
 							<FormHelperText sx={{ color: 'error.main' }} id='related_add'>
@@ -789,9 +807,7 @@ export default function EmploymentFrom() {
 
 					{/* Question */}
 					<Grid item xs={12}>
-						<FormControl
-							fullWidth
-							sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+						<FormControl fullWidth>
 							<FormLabel id='Question'>
 								هل لديك إمكانية العمل المأجور يوم الجمعة والسبت؟
 							</FormLabel>
@@ -819,23 +835,21 @@ export default function EmploymentFrom() {
 							/>
 						</FormControl>
 						{errors.Question && (
-							<FormHelperText
-								sx={{
-									color: 'error.main',
-								}}
-								id='Question'>
+							<FormHelperText sx={{ color: 'error.main' }}>
 								{errors.Question.message}
 							</FormHelperText>
 						)}
 					</Grid>
 
-					<Grid item xs={12} justifyContent={'center'} alignItems={'center'}>
-						<Button variant='contained' type='submit' color='primary'>
+					<Grid item xs={4}></Grid>
+					<Grid item xs={4}>
+						<Button variant='contained' type='submit' color='success'>
 							<Typography px={5} mx={5}>
 								إرسال الطلب
 							</Typography>
 						</Button>
 					</Grid>
+					<Grid item xs={4}></Grid>
 				</Grid>
 			</Container>
 		</form>

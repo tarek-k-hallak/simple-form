@@ -26,38 +26,12 @@ import Checkbox from '@mui/material/Checkbox';
 
 // ** Third Party
 import * as yup from 'yup';
-import { useForm, useFieldArray } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { useFieldArray } from 'react-hook-form';
 
 import { EXPERIENCES_CLASS, EXPERIENCES_SUBJECT } from 'src/const/dropDownList';
 
-const schema = yup.object().shape({
-	experiences: yup.array(),
-	template: yup.object().shape({
-		subject: yup.array().min(1, 'اضف مادة واحدة على الاقل'),
-		classes: yup.array().min(1, 'اضف صف واحد على الاقل'),
-		school: yup.string().required('هذا الحقل مطلوب'),
-		years_count: yup.number().typeError('يرجى ادخال رقم صحيح').required('هذا الحقل مطلوب'),
-	}),
-});
-
-const defaultValues = {
-	experiences: [],
-};
-
-const Experiences = ({ setEmploymentFrom, employmentFrom }) => {
+const Experiences = ({ control, register, errors }) => {
 	// ** Hooks
-	const {
-		register,
-		control,
-		getValues,
-		setValue,
-		formState: { errors },
-	} = useForm({
-		resolver: yupResolver(schema),
-		defaultValues,
-	});
-
 	const { fields, append, remove } = useFieldArray({
 		control,
 		name: 'experiences',
@@ -128,19 +102,18 @@ const Experiences = ({ setEmploymentFrom, employmentFrom }) => {
 										gridTemplateColumns: 'auto auto auto auto auto auto',
 									}}>
 									{field.subject.map((item, j) => (
-										<FormControlLabel
-											key={j}
-											value={item.title}
-											label={item.title}
-											labelPlacement='start'
-											control={
-												<Checkbox
-													{...register(
-														`experiences.${i}.subject.${j}.state`
-													)}
-												/>
-											}
-										/>
+										<Box
+											key={item.title}
+											sx={{
+												display: 'flex',
+												flexDirection: 'row',
+												alignItems: 'center',
+											}}>
+											<Checkbox
+												{...register(`experiences.${i}.subject.${j}.state`)}
+											/>
+											<Typography>{item.title}</Typography>
+										</Box>
 									))}
 								</FormGroup>
 							</FormControl>
@@ -157,19 +130,18 @@ const Experiences = ({ setEmploymentFrom, employmentFrom }) => {
 										gridTemplateColumns: 'auto auto auto auto auto auto',
 									}}>
 									{field.classes.map((item, j) => (
-										<FormControlLabel
-											key={j}
-											value={item.title}
-											label={item.title}
-											labelPlacement='start'
-											control={
-												<Checkbox
-													{...register(
-														`experiences.${i}.classes.${j}.state`
-													)}
-												/>
-											}
-										/>
+										<Box
+											key={item.title}
+											sx={{
+												display: 'flex',
+												flexDirection: 'row',
+												alignItems: 'center',
+											}}>
+											<Checkbox
+												{...register(`experiences.${i}.classes.${j}.state`)}
+											/>
+											<Typography>{item.title}</Typography>
+										</Box>
 									))}
 								</FormGroup>
 								{errors.classes && (
@@ -181,19 +153,19 @@ const Experiences = ({ setEmploymentFrom, employmentFrom }) => {
 						</Grid>
 
 						<Grid item xs={10}></Grid>
-						{fields.length > 1 && (
-							<Grid item xs={1}>
-								<Button
-									variant='contained'
-									color='error'
-									onClick={() => deleteCard(i)}>
-									x
-								</Button>
-							</Grid>
-						)}
+						<Grid item xs={1}>
+							<Button variant='contained' color='error' onClick={() => deleteCard(i)}>
+								x
+							</Button>
+						</Grid>
 					</Grid>
 				</Card>
 			))}
+			{errors.experiences && (
+				<FormHelperText sx={{ color: 'error.main' }}>
+					{errors.experiences.message}
+				</FormHelperText>
+			)}
 		</Card>
 	);
 };
