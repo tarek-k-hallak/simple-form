@@ -15,12 +15,12 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import FormHelperText from '@mui/material/FormHelperText';
 import Container from '@mui/material/Container';
-import { styled } from '@mui/material/styles';
 import RadioGroup from '@mui/material/RadioGroup';
 import Radio from '@mui/material/Radio';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormLabel from '@mui/material/FormLabel';
 import FormGroup from '@mui/material/FormGroup';
+import Card from '@mui/material/Card';
 
 // ** Third Party
 import axios from 'axios';
@@ -29,17 +29,12 @@ import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import DatePicker from 'react-datepicker';
 
-// ** Styles
-import 'react-datepicker/dist/react-datepicker.css';
-
 // ** Views
 import Experiences from 'src/views/employmentForm/Experiences';
 import Qualifications from 'src/views/employmentForm/Qualifications';
 
 // ** Const
 import {
-	EXPERIENCES_CLASS,
-	EXPERIENCES_SUBJECT,
 	CURRENT_SITUATION,
 	FAMILIAL_STATUS,
 	GENDER,
@@ -49,18 +44,15 @@ import {
 } from 'src/const/dropDownList';
 import { Checkbox } from '@mui/material';
 
-// Styled component for the upload image inside the dropzone area
-const Column = styled(Box)(({ theme }) => ({
-	display: 'flex',
-	flexDirection: 'column',
-	width: '100%',
-}));
+// ** Styles
+import 'react-datepicker/dist/react-datepicker.css';
 
 const phoneRegExp = /09[0-9]{8}/;
+const nameRegExp = /[a-zA-Zا-ي]/;
 
 const schema = yup.object().shape({
-	f_name: yup.string().required('هذا الحقل مطلوب'),
-	l_name: yup.string().required('هذا الحقل مطلوب'),
+	f_name: yup.string().required('هذا الحقل مطلوب').matches(nameRegExp, 'يرجى ادخال اسم صحيح'),
+	l_name: yup.string().required('هذا الحقل مطلوب').matches(nameRegExp, 'يرجى ادخال اسم صحيح'),
 	phone_number1: yup
 		.string()
 		.min(10, 'يجب ان يتألف الحقل من عشرة ارقام بالضبط')
@@ -74,22 +66,63 @@ const schema = yup.object().shape({
 	birth: yup.date().typeError('يرجى ادخال تاريخ صحيح').required('هذا الحقل مطلوب'),
 	gender: yup.string().required('هذا الحقل مطلوب'),
 	familial_status: yup.string().required('هذا الحقل مطلوب'),
-	Obligatory_service: yup.string(),
-	count_of_years: yup.string(),
+	Obligatory_service: yup.string().when('gender', {
+		is: (v) => v === 'ذكر',
+		then: (schema) => schema.required('هذا الحقل مطلوب '),
+		otherwise: (schema) => schema.notRequired(),
+	}),
+	count_of_years: yup.string().when('Obligatory_service', {
+		is: (v) => v === 'مؤجل',
+		then: (schema) => schema.required('هذا الحقل مطلوب'),
+		otherwise: (schema) => schema.notRequired(),
+	}),
 
 	current_situation: yup.string().required('هذا الحقل مطلوب'),
-	position_type: yup.string(),
+	position_type: yup.string().when('current_situation', {
+		is: (v) => v === 'متفرغ جزئيا',
+		then: (schema) => schema.required('هذا الحقل مطلوب'),
+		otherwise: (schema) => schema.notRequired(),
+	}),
 
 	related_add: yup.string().required('هذا الحقل مطلوب'),
 	tech_skills: yup.array(),
 	other_skills: yup.array(),
 
-	experiences: yup.array().min(1, 'اضف خبرة واحدة على الاقل'),
-	qualifications: yup.array().min(1, 'اضف مهارة واحدة على الاقل'),
+	experiences: yup
+		.array()
+		// .of(
+		// 	yup.object().shape({
+		// 		school: yup.string().required('هذا الحقل مطلوب'),
+		// 		years_count: yup.number().required('هذا الحقل مطلوب').min(1, 'يرجى اضافة رقم موجب'),
+		// 		subject: yup.array().min(1, 'اضف مادة واحدة على الاقل'),
+		// 		classes: yup.array().min(1, 'اضف صف واحد على الاقل'),
+		// 	})
+		// )
+		.min(1, 'اضف خبرة واحدة على الاقل'),
+	qualifications: yup
+		.array()
+		// .of(
+		// 	yup.object().shape({
+		// 		Certificate: yup.string().required('هذا الحقل مطلوب'),
+		// 		grant_year: yup
+		// 			.date()
+		// 			.typeError('يرجى ادخال تاريخ صحيح')
+		// 			.required('هذا الحقل مطلوب'),
+		// 	})
+		// )
+		.min(1, 'اضف مؤهل علمي واحدة على الاقل'),
 
 	question1: yup.string().required('هذا الحقل مطلوب'),
-	sch: yup.string(),
-	y_count: yup.string(),
+	sch: yup.string().when('question1', {
+		is: (v) => v === 'نعم',
+		then: (schema) => schema.required('هذا الحقل مطلوب'),
+		otherwise: (schema) => schema.notRequired(),
+	}),
+	y_count: yup.string().when('question1', {
+		is: (v) => v === 'نعم',
+		then: (schema) => schema.required('هذا الحقل مطلوب'),
+		otherwise: (schema) => schema.notRequired(),
+	}),
 
 	question2: yup.string().required('هذا الحقل مطلوب'),
 	question3: yup.string().required('هذا الحقل مطلوب'),
@@ -132,6 +165,7 @@ export default function EmploymentFrom() {
 		setValue,
 		watch,
 		getValues,
+		reset,
 		control,
 		formState: { errors },
 	} = useForm({
@@ -145,8 +179,6 @@ export default function EmploymentFrom() {
 		name: 'other_skills',
 	});
 
-	console.log('watch form', watch());
-
 	// ** Functions
 	// Submit to API
 	const onSubmit = (data) => {
@@ -154,10 +186,16 @@ export default function EmploymentFrom() {
 			params: { ...data },
 		});
 		const postData = async () => {
-			const res = await axios.post('http://172.16.1.219:8069/recruitment/create', {
-				params: { ...data },
-			});
-			console.log(res);
+			try {
+				const res = await axios.post('http://172.16.1.219:8069/recruitment/create', {
+					params: { ...data },
+				});
+				console.log(res);
+				alert('hurray Form submitted successfully');
+				reset();
+			} catch (err) {
+				alert(err);
+			}
 		};
 		postData();
 	};
@@ -169,321 +207,376 @@ export default function EmploymentFrom() {
 		});
 	};
 
+	// GET all address
 	useEffect(() => {
 		try {
 			fetch('http://172.16.1.219:8069/recruitment/website')
 				.then((response) => response.json())
 				.then((data) => setAllAddress(data.address));
 		} catch (err) {
-			alert(err);
+			alert(`Error found: ${err}`);
 		}
 	}, []);
 
 	return (
 		<form noValidate autoComplete='off' onSubmit={handleSubmit(onSubmit)}>
-			<Container>
+			<Container sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
 				<Box sx={{ bgcolor: 'gray', height: 150 }}></Box>
-				<Grid container columnGap={5} rowGap={2} my={5}>
-					<Grid item xs={12}>
-						<Typography variant='h4'>طلب توظيف</Typography>
-						<Typography variant='h6'>
-							قم بإدخال المعلومات المطلوبة للحصول على فرصة عمل لدينا
-						</Typography>
-					</Grid>
+				<Box>
+					<Typography variant='h4'>طلب توظيف</Typography>
+					<Typography variant='h6'>
+						قم بإدخال المعلومات المطلوبة للحصول على فرصة عمل لدينا
+					</Typography>
+				</Box>
 
-					{/* f_name */}
-					<Grid item xs={2.5}>
-						<Controller
-							name='f_name'
-							control={control}
-							render={({ field: { onChange, onBlur, value, ref } }) => (
-								<TextField
-									fullWidth
-									label={'الاسم الاول'}
-									onBlur={onBlur}
-									onChange={onChange}
-									value={value}
-									type='text'
-									variant='filled'
-									ref={ref}
-									error={Boolean(errors.f_name)}
-								/>
-							)}
-						/>
-						{errors.f_name && (
-							<FormHelperText sx={{ color: 'error.main' }}>
-								{errors.f_name.message}
-							</FormHelperText>
-						)}
-					</Grid>
+				<Card sx={{ p: 2 }}>
+					<Typography mb={2} variant='subtitle1' sx={{ fontWeight: 'bold' }}>
+						المعلومات الشخصية
+					</Typography>
 
-					{/* l_name */}
-					<Grid item xs={2.5}>
-						<Controller
-							name='l_name'
-							control={control}
-							render={({ field: { onChange, onBlur, value, ref } }) => (
-								<TextField
-									fullWidth
-									label={'اسم العائلة'}
-									onBlur={onBlur}
-									onChange={onChange}
-									value={value}
-									type='text'
-									variant='filled'
-									ref={ref}
-									error={Boolean(errors.l_name)}
-								/>
-							)}
-						/>
-						{errors.l_name && (
-							<FormHelperText sx={{ color: 'error.main' }}>
-								{errors.l_name.message}
-							</FormHelperText>
-						)}
-					</Grid>
-
-					{/* phone_number1 */}
-					<Grid item xs={2.5}>
-						<Box>
+					<Grid container columnGap={5} rowGap={2}>
+						{/* f_name */}
+						<Grid item xs={12} md={5.6} lg={2.5}>
 							<Controller
-								name='phone_number1'
+								name='f_name'
 								control={control}
 								render={({ field: { onChange, onBlur, value, ref } }) => (
 									<TextField
 										fullWidth
-										label={'رقم الموبايل الاول'}
+										label={'الاسم الاول'}
 										onBlur={onBlur}
 										onChange={onChange}
 										value={value}
 										type='text'
 										variant='filled'
 										ref={ref}
-										error={Boolean(errors.phone_number1)}
+										error={Boolean(errors.f_name)}
 									/>
 								)}
 							/>
-							{errors.phone_number1 && (
+							{errors.f_name && (
 								<FormHelperText sx={{ color: 'error.main' }}>
-									{errors.phone_number1.message}
+									{errors.f_name.message}
 								</FormHelperText>
 							)}
-						</Box>
-					</Grid>
+						</Grid>
 
-					{/* phone_number2 */}
-					<Grid item xs={2.5}>
-						<Box>
+						{/* l_name */}
+						<Grid item xs={12} md={5.6} lg={2.5}>
 							<Controller
-								name='phone_number2'
+								name='l_name'
 								control={control}
 								render={({ field: { onChange, onBlur, value, ref } }) => (
 									<TextField
 										fullWidth
-										label={'رقم الموبايل الثاني'}
+										label={'اسم العائلة'}
 										onBlur={onBlur}
 										onChange={onChange}
 										value={value}
 										type='text'
 										variant='filled'
 										ref={ref}
-										error={Boolean(errors.phone_number2)}
+										error={Boolean(errors.l_name)}
 									/>
 								)}
 							/>
-							{errors.phone_number2 && (
+							{errors.l_name && (
 								<FormHelperText sx={{ color: 'error.main' }}>
-									{errors.phone_number2.message}
+									{errors.l_name.message}
 								</FormHelperText>
 							)}
-						</Box>
-					</Grid>
+						</Grid>
 
-					{/* familial_status */}
-					<Grid item xs={2.5}>
-						<FormControl fullWidth>
-							<InputLabel id='familial_status'>الحالة العائلية</InputLabel>
-							<Controller
-								name='familial_status'
-								control={control}
-								render={({ field: { value, onChange } }) => (
-									<Select
-										value={value}
-										label={'الحالة العائلية'}
-										onChange={onChange}
-										error={Boolean(errors.familial_status)}
-										aria-describedby='familial_status'>
-										{FAMILIAL_STATUS.map((item) => (
-											<MenuItem key={item.label} value={item.value}>
-												{item.label}
-											</MenuItem>
-										))}
-									</Select>
+						{/* phone_number1 */}
+						<Grid item xs={12} md={5.6} lg={2.5}>
+							<Box>
+								<Controller
+									name='phone_number1'
+									control={control}
+									render={({ field: { onChange, onBlur, value, ref } }) => (
+										<TextField
+											fullWidth
+											label={'رقم الموبايل الاول'}
+											onBlur={onBlur}
+											onChange={onChange}
+											value={value}
+											type='text'
+											variant='filled'
+											ref={ref}
+											error={Boolean(errors.phone_number1)}
+										/>
+									)}
+								/>
+								{errors.phone_number1 && (
+									<FormHelperText sx={{ color: 'error.main' }}>
+										{errors.phone_number1.message}
+									</FormHelperText>
 								)}
-							/>
+							</Box>
+						</Grid>
+
+						{/* phone_number2 */}
+						<Grid item xs={12} md={5.6} lg={2.5}>
+							<Box>
+								<Controller
+									name='phone_number2'
+									control={control}
+									render={({ field: { onChange, onBlur, value, ref } }) => (
+										<TextField
+											fullWidth
+											label={'رقم الموبايل الثاني'}
+											onBlur={onBlur}
+											onChange={onChange}
+											value={value}
+											type='text'
+											variant='filled'
+											ref={ref}
+											error={Boolean(errors.phone_number2)}
+										/>
+									)}
+								/>
+								{errors.phone_number2 && (
+									<FormHelperText sx={{ color: 'error.main' }}>
+										{errors.phone_number2.message}
+									</FormHelperText>
+								)}
+							</Box>
+						</Grid>
+
+						{/* familial_status */}
+						<Grid item xs={12} md={5.6} lg={2.5}>
+							<FormControl fullWidth>
+								<InputLabel id='familial_status'>الحالة العائلية</InputLabel>
+								<Controller
+									name='familial_status'
+									control={control}
+									render={({ field: { value, onChange } }) => (
+										<Select
+											value={value}
+											label={'الحالة العائلية'}
+											onChange={onChange}
+											error={Boolean(errors.familial_status)}
+											aria-describedby='familial_status'>
+											{FAMILIAL_STATUS.map((item) => (
+												<MenuItem key={item.label} value={item.value}>
+													{item.label}
+												</MenuItem>
+											))}
+										</Select>
+									)}
+								/>
+							</FormControl>
 							{errors.gender && (
 								<FormHelperText sx={{ color: 'error.main' }} id='gender'>
 									{errors.gender.message}
 								</FormHelperText>
 							)}
-						</FormControl>
-					</Grid>
+						</Grid>
 
-					{/* related_add */}
-					<Grid item xs={2.5}>
-						<FormControl fullWidth>
-							<InputLabel id='related_add'>مكان السكن</InputLabel>
-							<Controller
-								name='related_add'
-								control={control}
-								render={({ field: { value, onChange } }) => (
-									<Select
-										value={value}
-										label={'مكان السكن'}
-										onChange={onChange}
-										error={Boolean(errors.related_add)}
-										aria-describedby='related_add'>
-										{allAddress.map((item) => (
-											<MenuItem key={item.id} value={item.id}>
-												{item.name}
-											</MenuItem>
-										))}
-									</Select>
-								)}
-							/>
-							{errors.related_add && (
-								<FormHelperText sx={{ color: 'error.main' }} id='related_add'>
-									{errors.related_add.message}
-								</FormHelperText>
-							)}
-						</FormControl>
-					</Grid>
-
-					{/* birth */}
-					<Grid item xs={2.5}>
-						<Box>
-							<Controller
-								name='birth'
-								control={control}
-								render={({ field: { value, onChange } }) => (
-									<DatePicker
-										selected={value}
-										showYearDropdown
-										showMonthDropdown
-										onChange={(e) => onChange(e)}
-										placeholderText='MM/DD/YYYY'
-										customInput={
-											<TextField
-												fullWidth
-												value={value}
-												onChange={onChange}
-												icon={'ic:round-access-time'}
-												label={'سنة الميلاد'}
-												error={Boolean(errors.birth)}
-												aria-describedby='birth'
-											/>
-										}
-									/>
-								)}
-							/>
-							{errors.birth && (
-								<FormHelperText
-									sx={{
-										mx: 3.5,
-										color: 'error.main',
-									}}
-									id='birth'>
-									{errors.birth.message}
-								</FormHelperText>
-							)}
-						</Box>
-					</Grid>
-
-					{/* gender */}
-					<Grid item xs={2.5}>
-						<FormControl
-							fullWidth
-							sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-							<FormLabel id='gender'>الجنس</FormLabel>
-							<Controller
-								name='gender'
-								control={control}
-								render={({ field: { value, onChange } }) => (
-									<RadioGroup
-										row
-										name='gender'
-										value={value}
-										label={'الجنس'}
-										onChange={onChange}
-										aria-describedby='gender'>
-										{GENDER.map((item) => (
-											<FormControlLabel
-												key={item.value}
-												value={item.value}
-												control={<Radio />}
-												label={item.label}
-											/>
-										))}
-									</RadioGroup>
-								)}
-							/>
-						</FormControl>
-						{errors.gender && (
-							<FormHelperText sx={{ color: 'error.main' }} id='gender'>
-								{errors.gender.message}
-							</FormHelperText>
-						)}
-					</Grid>
-
-					{watch().gender === 'ذكر' && (
-						<>
-							<Grid item xs={5}>
-								<FormControl fullWidth>
-									<InputLabel id='Obligatory_service'>
-										الخدمة الإلزامية
-									</InputLabel>
-									<Controller
-										name='Obligatory_service'
-										control={control}
-										render={({ field: { value, onChange } }) => (
-											<Select
-												value={value}
-												label={'الخدمة الإلزامية'}
-												onChange={onChange}
-												error={Boolean(errors.Obligatory_service)}
-												aria-describedby='Obligatory_service'>
-												{OBLIGATORY_SERVICE.map((item) => (
-													<MenuItem key={item.label} value={item.value}>
-														{item.label}
-													</MenuItem>
-												))}
-											</Select>
-										)}
-									/>
-									{errors.Obligatory_service && (
-										<FormHelperText
-											sx={{ color: 'error.main' }}
-											id='Obligatory_service'>
-											{errors.Obligatory_service.message}
-										</FormHelperText>
+						{/* related_add */}
+						<Grid item xs={12} md={5.6} lg={2.5}>
+							<FormControl fullWidth>
+								<InputLabel id='related_add'>مكان السكن</InputLabel>
+								<Controller
+									name='related_add'
+									control={control}
+									render={({ field: { value, onChange } }) => (
+										<Select
+											value={value}
+											label={'مكان السكن'}
+											onChange={onChange}
+											error={Boolean(errors.related_add)}
+											aria-describedby='related_add'>
+											{allAddress.map((item) => (
+												<MenuItem key={item.id} value={item.id}>
+													{item.name}
+												</MenuItem>
+											))}
+										</Select>
 									)}
-								</FormControl>
+								/>
+								{errors.related_add && (
+									<FormHelperText sx={{ color: 'error.main' }} id='related_add'>
+										{errors.related_add.message}
+									</FormHelperText>
+								)}
+							</FormControl>
+						</Grid>
+
+						{/* birth */}
+						<Grid item xs={12} md={5.6} lg={2.5}>
+							<Box>
+								<Controller
+									name='birth'
+									control={control}
+									render={({ field: { value, onChange } }) => (
+										<DatePicker
+											selected={value}
+											showYearDropdown
+											showMonthDropdown
+											onChange={(e) => onChange(e)}
+											placeholderText='MM/DD/YYYY'
+											customInput={
+												<TextField
+													fullWidth
+													value={value}
+													onChange={onChange}
+													icon={'ic:round-access-time'}
+													label={'سنة الميلاد'}
+													error={Boolean(errors.birth)}
+													aria-describedby='birth'
+												/>
+											}
+										/>
+									)}
+								/>
+								{errors.birth && (
+									<FormHelperText
+										sx={{
+											mx: 3.5,
+											color: 'error.main',
+										}}
+										id='birth'>
+										{errors.birth.message}
+									</FormHelperText>
+								)}
+							</Box>
+						</Grid>
+
+						{/* gender */}
+						<Grid item xs={12} md={5.6} lg={2.5}>
+							<FormControl fullWidth>
+								<FormLabel id='gender'>الجنس</FormLabel>
+								<Controller
+									name='gender'
+									control={control}
+									render={({ field: { value, onChange } }) => (
+										<RadioGroup
+											row
+											name='gender'
+											value={value}
+											label={'الجنس'}
+											onChange={onChange}
+											aria-describedby='gender'>
+											{GENDER.map((item) => (
+												<FormControlLabel
+													key={item.value}
+													value={item.value}
+													control={<Radio />}
+													label={item.label}
+												/>
+											))}
+										</RadioGroup>
+									)}
+								/>
+							</FormControl>
+							{errors.gender && (
+								<FormHelperText sx={{ color: 'error.main' }} id='gender'>
+									{errors.gender.message}
+								</FormHelperText>
+							)}
+						</Grid>
+
+						{watch().gender === 'ذكر' && (
+							<Grid item xs={12}>
+								<Grid container columnGap={5} rowGap={2}>
+									<Grid item xs={12} md={5.7} lg={2.5}>
+										<FormControl fullWidth>
+											<InputLabel id='Obligatory_service'>
+												الخدمة الإلزامية
+											</InputLabel>
+											<Controller
+												name='Obligatory_service'
+												control={control}
+												render={({ field: { value, onChange } }) => (
+													<Select
+														value={value}
+														label={'الخدمة الإلزامية'}
+														onChange={onChange}
+														error={Boolean(errors.Obligatory_service)}
+														aria-describedby='Obligatory_service'>
+														{OBLIGATORY_SERVICE.map((item) => (
+															<MenuItem
+																key={item.label}
+																value={item.value}>
+																{item.label}
+															</MenuItem>
+														))}
+													</Select>
+												)}
+											/>
+											{errors.Obligatory_service && (
+												<FormHelperText
+													sx={{ color: 'error.main' }}
+													id='Obligatory_service'>
+													{errors.Obligatory_service.message}
+												</FormHelperText>
+											)}
+										</FormControl>
+									</Grid>
+									{watch().Obligatory_service === 'مؤجل' && (
+										<Grid item xs={12} md={5.7} lg={2.5}>
+											<FormControl fullWidth>
+												<InputLabel id='count_of_years'>
+													عدد السنوات
+												</InputLabel>
+												<Controller
+													name='count_of_years'
+													control={control}
+													render={({ field: { value, onChange } }) => (
+														<Select
+															value={value}
+															label={'عدد السنوات'}
+															onChange={onChange}
+															error={Boolean(
+																errors.Obligatory_service
+															)}
+															aria-describedby='Obligatory_service'>
+															{OBLIGATORY_SERVICE[4].type.map(
+																(item) => (
+																	<MenuItem
+																		key={item.label}
+																		value={item.value}>
+																		{item.label}
+																	</MenuItem>
+																)
+															)}
+														</Select>
+													)}
+												/>
+												{errors.count_of_years && (
+													<FormHelperText
+														sx={{ color: 'error.main' }}
+														id='count_of_years'>
+														{errors.count_of_years.message}
+													</FormHelperText>
+												)}
+											</FormControl>
+										</Grid>
+									)}
+								</Grid>
 							</Grid>
-							{watch().Obligatory_service === 'مؤجل' && (
-								<Grid item xs={5}>
+						)}
+
+						<Grid item xs={12}>
+							<Grid container columnGap={5} rowGap={2}>
+								{/* current_situation */}
+								<Grid item xs={12} md={5.7} lg={2.5}>
 									<FormControl fullWidth>
-										<InputLabel id='count_of_years'>عدد السنوات</InputLabel>
+										<InputLabel id='current_situation'>
+											الوضع الوظيفي الحالي
+										</InputLabel>
 										<Controller
-											name='count_of_years'
+											name='current_situation'
 											control={control}
 											render={({ field: { value, onChange } }) => (
 												<Select
 													value={value}
-													label={'عدد السنوات'}
+													label={'الوضع الوظيفي الحالي'}
 													onChange={onChange}
-													error={Boolean(errors.Obligatory_service)}
-													aria-describedby='Obligatory_service'>
-													{OBLIGATORY_SERVICE[4].type.map((item) => (
+													error={Boolean(errors.current_situation)}
+													aria-describedby='current_situation'>
+													{CURRENT_SITUATION.map((item) => (
 														<MenuItem
 															key={item.label}
 															value={item.value}>
@@ -493,354 +586,356 @@ export default function EmploymentFrom() {
 												</Select>
 											)}
 										/>
-										{errors.count_of_years && (
+										{errors.current_situation && (
 											<FormHelperText
 												sx={{ color: 'error.main' }}
-												id='count_of_years'>
-												{errors.count_of_years.message}
+												id='current_situation'>
+												{errors.current_situation.message}
 											</FormHelperText>
 										)}
 									</FormControl>
 								</Grid>
-							)}
-						</>
-					)}
 
-					{/* current_situation */}
-					<Grid item xs={5}>
-						<FormControl fullWidth>
-							<InputLabel id='current_situation'>الوضع الوظيفي الحالي</InputLabel>
-							<Controller
-								name='current_situation'
-								control={control}
-								render={({ field: { value, onChange } }) => (
-									<Select
-										value={value}
-										label={'الوضع الوظيفي الحالي'}
-										onChange={onChange}
-										error={Boolean(errors.current_situation)}
-										aria-describedby='current_situation'>
-										{CURRENT_SITUATION.map((item) => (
-											<MenuItem key={item.label} value={item.value}>
-												{item.label}
-											</MenuItem>
-										))}
-									</Select>
+								{watch().current_situation === 'متفرغ جزئيا' && (
+									// position_type
+									<Grid item xs={12} md={5.7} lg={2.5}>
+										<FormControl fullWidth>
+											<InputLabel id='position_type'>الوضع الحالي</InputLabel>
+											<Controller
+												name='position_type'
+												control={control}
+												render={({ field: { value, onChange } }) => (
+													<Select
+														value={value}
+														label={'الوضع الحالي'}
+														onChange={onChange}
+														error={Boolean(errors.position_type)}
+														aria-describedby='position_type'>
+														{CURRENT_SITUATION[1].type.map((item) => (
+															<MenuItem
+																key={item.label}
+																value={item.value}>
+																{item.label}
+															</MenuItem>
+														))}
+													</Select>
+												)}
+											/>
+											{errors.current_situation && (
+												<FormHelperText
+													sx={{ color: 'error.main' }}
+													id='current_situation'>
+													{errors.current_situation.message}
+												</FormHelperText>
+											)}
+										</FormControl>
+										{errors.position_type && (
+											<FormHelperText sx={{ color: 'error.main' }}>
+												{errors.position_type.message}
+											</FormHelperText>
+										)}
+									</Grid>
 								)}
-							/>
-							{errors.current_situation && (
-								<FormHelperText sx={{ color: 'error.main' }} id='current_situation'>
-									{errors.current_situation.message}
+							</Grid>
+						</Grid>
+					</Grid>
+				</Card>
+
+				<Card sx={{ p: 2 }}>
+					<Typography mb={2} variant='subtitle1' sx={{ fontWeight: 'bold' }}>
+						المهارات
+					</Typography>
+					<Grid container columnGap={5} rowGap={2}>
+						{/* tech_skills */}
+						<Grid item xs={12} md={5.6}>
+							<FormControl fullWidth>
+								<FormLabel id={`tech_skills`}>مهارات تقنية</FormLabel>
+								{TECH_SKILLS.map((item, i) => (
+									<Box
+										key={i}
+										sx={{
+											display: 'flex',
+											flexDirection: 'row',
+											alignItems: 'center',
+										}}>
+										<input
+											type='checkbox'
+											{...register(`tech_skills.${i}.state`)}
+										/>
+										<Typography>{item.title}</Typography>
+									</Box>
+								))}
+							</FormControl>
+							{errors.tech_skills && (
+								<FormHelperText sx={{ color: 'error.main' }}>
+									{errors.tech_skills.message}
 								</FormHelperText>
 							)}
-						</FormControl>
-					</Grid>
+						</Grid>
 
-					{watch().current_situation === 'متفرغ جزئياً' && (
-						// position_type
-						<Grid item xs={5}>
+						{/* other_skills */}
+						<Grid item xs={12} md={5.6}>
 							<FormControl fullWidth>
-								<InputLabel id='position_type'>الوضع الحالي</InputLabel>
-								<Controller
-									name='position_type'
-									control={control}
-									render={({ field: { value, onChange } }) => (
-										<Select
-											value={value}
-											label={'الوضع الحالي'}
-											onChange={onChange}
-											error={Boolean(errors.position_type)}
-											aria-describedby='position_type'>
-											{CURRENT_SITUATION[1].type.map((item) => (
-												<MenuItem key={item.label} value={item.value}>
-													{item.label}
-												</MenuItem>
+								<FormLabel id={`other_skills`}>مهارات اخرى</FormLabel>
+								<FormGroup>
+									<Box
+										sx={{
+											display: 'flex',
+											flexDirection: 'row',
+											alignItems: 'flex-end',
+											gap: 2,
+										}}>
+										<Box>
+											{fields.map((field, i) => (
+												<Box key={field.id}>
+													<Checkbox
+														{...register(`other_skills.${i}.state`)}
+													/>
+													<TextField
+														placeholder='اسم المهارة'
+														{...register(`other_skills.${i}.title`)}
+													/>
+												</Box>
 											))}
-										</Select>
-									)}
-								/>
-								{errors.current_situation && (
-									<FormHelperText
-										sx={{ color: 'error.main' }}
-										id='current_situation'>
-										{errors.current_situation.message}
+										</Box>
+										<Button
+											variant='contained'
+											color='success'
+											type='button'
+											onClick={addNewTechSkill}
+											sx={{ mb: 1 }}>
+											إضافة
+										</Button>
+									</Box>
+								</FormGroup>
+								{errors.other_skills && (
+									<FormHelperText sx={{ color: 'error.main' }}>
+										{errors.other_skills.message}
 									</FormHelperText>
 								)}
 							</FormControl>
 						</Grid>
-					)}
-
-					{/* tech_skills */}
-					<Grid item xs={12}>
-						<FormControl fullWidth>
-							<FormLabel id={`tech_skills`}>مهارات تقنية</FormLabel>
-							{TECH_SKILLS.map((item, i) => (
-								<Box
-									key={i}
-									sx={{
-										display: 'flex',
-										flexDirection: 'row',
-										alignItems: 'center',
-									}}>
-									<Checkbox {...register(`tech_skills.${i}.state`)} />
-									<Typography>{item.title}</Typography>
-								</Box>
-							))}
-						</FormControl>
-						{errors.tech_skills && (
-							<FormHelperText sx={{ color: 'error.main' }}>
-								{errors.tech_skills.message}
-							</FormHelperText>
-						)}
 					</Grid>
+				</Card>
 
-					{/* other_skills */}
-					<Grid item xs={12}>
-						<FormControl fullWidth>
-							<FormLabel id={`other_skills`}>مهارات اخرى</FormLabel>
-							<FormGroup>
-								<Box
-									sx={{
-										display: 'flex',
-										flexDirection: 'row',
-										alignItems: 'flex-end',
-										gap: 2,
-									}}>
-									<Box>
-										{fields.map((field, i) => (
-											<Box key={field.id}>
-												<Checkbox
-													{...register(`other_skills.${i}.state`)}
+				{/* Experiences */}
+				<Card sx={{ p: 2 }}>
+					<Experiences control={control} register={register} errors={errors} />
+				</Card>
+
+				{/* Qualifications */}
+				<Card sx={{ p: 2 }}>
+					<Qualifications control={control} register={register} errors={errors} />
+				</Card>
+
+				<Card sx={{ p: 2 }}>
+					<Typography mb={2} variant='subtitle1' sx={{ fontWeight: 'bold' }}>
+						اسئلة عامة
+					</Typography>
+
+					<Grid container columnGap={5} rowGap={6}>
+						{/* question1 */}
+						<Grid item xs={3.5}>
+							<FormControl fullWidth>
+								<FormLabel id='question1'>هل سبق لك التعليم عن بعد ؟</FormLabel>
+								<Controller
+									name='question1'
+									control={control}
+									render={({ field: { value, onChange } }) => (
+										<RadioGroup
+											row
+											name='question1'
+											value={value}
+											label={'هل سبق لك التعليم عن بعد ؟'}
+											onChange={onChange}
+											aria-describedby='question1'>
+											{YES_NO_QUESTION.map((item) => (
+												<FormControlLabel
+													key={item.value}
+													value={item.value}
+													label={item.label}
+													control={<Radio />}
 												/>
-												<TextField
-													placeholder='Skill Name'
-													{...register(`other_skills.${i}.title`)}
-												/>
-											</Box>
-										))}
-									</Box>
-									<Button
-										variant='contained'
-										color='success'
-										type='button'
-										onClick={addNewTechSkill}
-										sx={{ mb: 1 }}>
-										Append
-									</Button>
-								</Box>
-							</FormGroup>
-							{errors.other_skills && (
-								<FormHelperText sx={{ color: 'error.main' }}>
-									{errors.other_skills.message}
+											))}
+										</RadioGroup>
+									)}
+								/>
+							</FormControl>
+							{errors.question1 && (
+								<FormHelperText sx={{ color: 'error.main' }} id='related_add'>
+									{errors.question1.message}
 								</FormHelperText>
 							)}
-						</FormControl>
-					</Grid>
+						</Grid>
 
-					{/* Experiences */}
-					<Grid item xs={12}>
-						<Experiences control={control} register={register} errors={errors} />
-					</Grid>
-
-					{/* Qualifications */}
-					<Grid item xs={12}>
-						<Qualifications control={control} register={register} errors={errors} />
-					</Grid>
-
-					{/* question3 */}
-					<Grid item xs={12}>
-						<FormControl fullWidth>
-							<FormLabel id='question3'>هل لديك شهادة ICDL؟</FormLabel>
-							<Controller
-								name='question3'
-								control={control}
-								render={({ field: { value, onChange } }) => (
-									<RadioGroup
-										row
-										name='question3'
-										value={value}
-										label={'هل لديك شهادة ICDL؟'}
-										onChange={onChange}
-										aria-describedby='question3'>
-										{YES_NO_QUESTION.map((item) => (
-											<FormControlLabel
-												key={item.value}
-												value={item.value}
-												control={<Radio />}
-												label={item.label}
+						{watch().question1 === 'نعم' && (
+							<>
+								{/* sch */}
+								<Grid item xs={3.5}>
+									<Controller
+										name={`sch`}
+										control={control}
+										render={({ field: { onChange, onBlur, value, ref } }) => (
+											<TextField
+												fullWidth
+												label={'المدرسة'}
+												onBlur={onBlur}
+												onChange={onChange}
+												value={value}
+												type='text'
+												variant='filled'
+												ref={ref}
+												error={Boolean(errors.sch)}
 											/>
-										))}
-									</RadioGroup>
-								)}
-							/>
-						</FormControl>
-						{errors.question3 && (
-							<FormHelperText sx={{ color: 'error.main' }} id='question3'>
-								{errors.question3.message}
-							</FormHelperText>
-						)}
-					</Grid>
+										)}
+									/>
+									{errors.sch && (
+										<FormHelperText sx={{ color: 'error.main' }}>
+											{errors.sch.message}
+										</FormHelperText>
+									)}
+								</Grid>
 
-					{/* question2 */}
-					<Grid item xs={12}>
-						<FormControl fullWidth>
-							<FormLabel id='question2'>هل لديك خبرة باستخدام الكومبيوتر؟</FormLabel>
-							<Controller
-								name='question2'
-								control={control}
-								render={({ field: { value, onChange } }) => (
-									<RadioGroup
-										row
-										name='question2'
-										value={value}
-										label={'هل لديك خبرة باستخدام الكومبيوتر؟'}
-										onChange={onChange}
-										aria-describedby='question2'>
-										{YES_NO_QUESTION.map((item) => (
-											<FormControlLabel
-												key={item.value}
-												value={item.value}
-												control={<Radio />}
-												label={item.label}
+								{/* y_count */}
+								<Grid item xs={3.5}>
+									<Controller
+										name={`y_count`}
+										control={control}
+										render={({ field: { onChange, onBlur, value, ref } }) => (
+											<TextField
+												fullWidth
+												label={'عدد السنوات'}
+												onBlur={onBlur}
+												onChange={onChange}
+												value={value}
+												type='number'
+												variant='filled'
+												ref={ref}
+												error={Boolean(errors.y_count)}
 											/>
-										))}
-									</RadioGroup>
-								)}
-							/>
-						</FormControl>
-						{errors.question2 && (
-							<FormHelperText sx={{ color: 'error.main' }} id='question2'>
-								{errors.question2.message}
-							</FormHelperText>
+										)}
+									/>
+									{errors.y_count && (
+										<FormHelperText sx={{ color: 'error.main' }}>
+											{errors.y_count.message}
+										</FormHelperText>
+									)}
+								</Grid>
+							</>
 						)}
-					</Grid>
 
-					{/* question1 */}
-					<Grid item xs={3.5}>
-						<FormControl fullWidth>
-							<FormLabel id='question1'>هل سبق لك التعليم عن بعد ؟</FormLabel>
-							<Controller
-								name='question1'
-								control={control}
-								render={({ field: { value, onChange } }) => (
-									<RadioGroup
-										row
-										name='question1'
-										value={value}
-										label={'هل سبق لك التعليم عن بعد ؟'}
-										onChange={onChange}
-										aria-describedby='question1'>
-										{YES_NO_QUESTION.map((item) => (
-											<FormControlLabel
-												key={item.value}
-												value={item.value}
-												label={item.label}
-												control={<Radio />}
-											/>
-										))}
-									</RadioGroup>
-								)}
-							/>
-						</FormControl>
-						{errors.question1 && (
-							<FormHelperText sx={{ color: 'error.main' }} id='related_add'>
-								{errors.question1.message}
-							</FormHelperText>
-						)}
-					</Grid>
-
-					{watch().question1 === 'نعم' && (
-						<>
-							{/* sch */}
-							<Grid item xs={3.5}>
+						{/* question3 */}
+						<Grid item xs={12}>
+							<FormControl fullWidth>
+								<FormLabel id='question3'>هل لديك شهادة ICDL؟</FormLabel>
 								<Controller
-									name={`sch`}
+									name='question3'
 									control={control}
-									render={({ field: { onChange, onBlur, value, ref } }) => (
-										<TextField
-											fullWidth
-											label={'المدرسة'}
-											onBlur={onBlur}
-											onChange={onChange}
+									render={({ field: { value, onChange } }) => (
+										<RadioGroup
+											row
+											name='question3'
 											value={value}
-											type='text'
-											variant='filled'
-											ref={ref}
-											error={Boolean(errors.sch)}
-										/>
+											label={'هل لديك شهادة ICDL؟'}
+											onChange={onChange}
+											aria-describedby='question3'>
+											{YES_NO_QUESTION.map((item) => (
+												<FormControlLabel
+													key={item.value}
+													value={item.value}
+													control={<Radio />}
+													label={item.label}
+												/>
+											))}
+										</RadioGroup>
 									)}
 								/>
-								{errors.sch && (
-									<FormHelperText sx={{ color: 'error.main' }}>
-										{errors.sch.message}
-									</FormHelperText>
-								)}
-							</Grid>
+							</FormControl>
+							{errors.question3 && (
+								<FormHelperText sx={{ color: 'error.main' }} id='question3'>
+									{errors.question3.message}
+								</FormHelperText>
+							)}
+						</Grid>
 
-							{/* y_count */}
-							<Grid item xs={3.5}>
+						{/* question2 */}
+						<Grid item xs={12}>
+							<FormControl fullWidth>
+								<FormLabel id='question2'>
+									هل لديك خبرة باستخدام الكومبيوتر؟
+								</FormLabel>
 								<Controller
-									name={`y_count`}
+									name='question2'
 									control={control}
-									render={({ field: { onChange, onBlur, value, ref } }) => (
-										<TextField
-											fullWidth
-											label={'عدد السنوات'}
-											onBlur={onBlur}
-											onChange={onChange}
+									render={({ field: { value, onChange } }) => (
+										<RadioGroup
+											row
+											name='question2'
 											value={value}
-											type='number'
-											variant='filled'
-											ref={ref}
-											error={Boolean(errors.y_count)}
-										/>
+											label={'هل لديك خبرة باستخدام الكومبيوتر؟'}
+											onChange={onChange}
+											aria-describedby='question2'>
+											{YES_NO_QUESTION.map((item) => (
+												<FormControlLabel
+													key={item.value}
+													value={item.value}
+													control={<Radio />}
+													label={item.label}
+												/>
+											))}
+										</RadioGroup>
 									)}
 								/>
-								{errors.y_count && (
-									<FormHelperText sx={{ color: 'error.main' }}>
-										{errors.y_count.message}
-									</FormHelperText>
-								)}
-							</Grid>
-						</>
-					)}
+							</FormControl>
+							{errors.question2 && (
+								<FormHelperText sx={{ color: 'error.main' }} id='question2'>
+									{errors.question2.message}
+								</FormHelperText>
+							)}
+						</Grid>
 
-					{/* Question */}
-					<Grid item xs={12}>
-						<FormControl fullWidth>
-							<FormLabel id='Question'>
-								هل لديك إمكانية العمل المأجور يوم الجمعة والسبت؟
-							</FormLabel>
-							<Controller
-								name='Question'
-								control={control}
-								render={({ field: { value, onChange } }) => (
-									<RadioGroup
-										row
-										name='Question'
-										value={value}
-										label={'هل لديك إمكانية العمل المأجور يوم الجمعة والسبت؟'}
-										onChange={onChange}
-										aria-describedby='Question'>
-										{YES_NO_QUESTION.map((item) => (
-											<FormControlLabel
-												key={item.value}
-												value={item.value}
-												control={<Radio />}
-												label={item.label}
-											/>
-										))}
-									</RadioGroup>
-								)}
-							/>
-						</FormControl>
-						{errors.Question && (
-							<FormHelperText sx={{ color: 'error.main' }}>
-								{errors.Question.message}
-							</FormHelperText>
-						)}
+						{/* Question */}
+						<Grid item xs={12}>
+							<FormControl fullWidth>
+								<FormLabel id='Question'>
+									هل لديك إمكانية العمل المأجور يوم الجمعة والسبت؟
+								</FormLabel>
+								<Controller
+									name='Question'
+									control={control}
+									render={({ field: { value, onChange } }) => (
+										<RadioGroup
+											row
+											name='Question'
+											value={value}
+											label={
+												'هل لديك إمكانية العمل المأجور يوم الجمعة والسبت؟'
+											}
+											onChange={onChange}
+											aria-describedby='Question'>
+											{YES_NO_QUESTION.map((item) => (
+												<FormControlLabel
+													key={item.value}
+													value={item.value}
+													control={<Radio />}
+													label={item.label}
+												/>
+											))}
+										</RadioGroup>
+									)}
+								/>
+							</FormControl>
+							{errors.Question && (
+								<FormHelperText sx={{ color: 'error.main' }}>
+									{errors.Question.message}
+								</FormHelperText>
+							)}
+						</Grid>
 					</Grid>
+				</Card>
 
+				{/* Submit Button */}
+				<Grid container columnGap={5} rowGap={2}>
 					<Grid item xs={4}></Grid>
 					<Grid item xs={4}>
 						<Button variant='contained' type='submit' color='success'>

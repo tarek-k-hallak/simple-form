@@ -69,10 +69,10 @@ const Qualifications = ({ control, register, errors }) => {
 	};
 
 	return (
-		<Card sx={{ p: 2 }}>
+		<Box>
 			<Grid container justifyContent={'space-between'}>
 				<Grid item xs={10}>
-					<Typography variant='h4' sx={{ fontWeight: 'bold' }}>
+					<Typography variant='subtitle1' sx={{ fontWeight: 'bold' }}>
 						المؤهلات العلمية
 					</Typography>
 				</Grid>
@@ -96,6 +96,11 @@ const Qualifications = ({ control, register, errors }) => {
 								type='text'
 								variant='filled'
 							/>
+							{/* {errors.qualifications[i] && errors.qualifications[0].Certificate && (
+								<FormHelperText sx={{ color: 'error.main' }}>
+									{errors.qualifications[i].Certificate.message}
+								</FormHelperText>
+							)} */}
 						</Grid>
 
 						{/* grant_year */}
@@ -122,6 +127,11 @@ const Qualifications = ({ control, register, errors }) => {
 									/>
 								)}
 							/>
+							{/* {errors.qualifications[i] && errors.qualifications[0].grant_year && (
+								<FormHelperText sx={{ color: 'error.main' }}>
+									{errors.qualifications[i].grant_year.message}
+								</FormHelperText>
+							)} */}
 						</Grid>
 
 						<Grid item xs={10}></Grid>
@@ -138,7 +148,7 @@ const Qualifications = ({ control, register, errors }) => {
 					{errors.qualifications.message}
 				</FormHelperText>
 			)}
-		</Card>
+		</Box>
 	);
 };
 

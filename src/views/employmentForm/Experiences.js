@@ -52,10 +52,10 @@ const Experiences = ({ control, register, errors }) => {
 	};
 
 	return (
-		<Card sx={{ p: 2 }}>
+		<Box>
 			<Grid container justifyContent={'space-between'}>
 				<Grid item xs={10}>
-					<Typography variant='h4' sx={{ fontWeight: 'bold' }}>
+					<Typography variant='subtitle1' sx={{ fontWeight: 'bold' }}>
 						الخبرات
 					</Typography>
 				</Grid>
@@ -78,6 +78,11 @@ const Experiences = ({ control, register, errors }) => {
 								type='text'
 								variant='filled'
 							/>
+							{/* {errors.experiences[i].school && (
+								<FormHelperText sx={{ color: 'error.main' }}>
+									{errors.experiences[i].school.message}
+								</FormHelperText>
+							)} */}
 						</Grid>
 
 						{/* years_count */}
@@ -89,6 +94,11 @@ const Experiences = ({ control, register, errors }) => {
 								type='number'
 								variant='filled'
 							/>
+							{/* {errors.experiences[0].years_count && (
+								<FormHelperText sx={{ color: 'error.main' }}>
+									{errors.experiences[i].years_count.message}
+								</FormHelperText>
+							)} */}
 						</Grid>
 
 						{/* subject */}
@@ -109,7 +119,8 @@ const Experiences = ({ control, register, errors }) => {
 												flexDirection: 'row',
 												alignItems: 'center',
 											}}>
-											<Checkbox
+											<input
+												type='checkbox'
 												{...register(`experiences.${i}.subject.${j}.state`)}
 											/>
 											<Typography>{item.title}</Typography>
@@ -117,6 +128,11 @@ const Experiences = ({ control, register, errors }) => {
 									))}
 								</FormGroup>
 							</FormControl>
+							{/* {errors.experiences[0].subject && (
+								<FormHelperText sx={{ color: 'error.main' }}>
+									{errors.experiences[i].subject.message}
+								</FormHelperText>
+							)} */}
 						</Grid>
 
 						{/* classes */}
@@ -137,19 +153,20 @@ const Experiences = ({ control, register, errors }) => {
 												flexDirection: 'row',
 												alignItems: 'center',
 											}}>
-											<Checkbox
+											<input
+												type='checkbox'
 												{...register(`experiences.${i}.classes.${j}.state`)}
 											/>
 											<Typography>{item.title}</Typography>
 										</Box>
 									))}
 								</FormGroup>
-								{errors.classes && (
-									<FormHelperText sx={{ color: 'error.main' }}>
-										{errors.classes.message}
-									</FormHelperText>
-								)}
 							</FormControl>
+							{/* {errors.experiences[0].classes && (
+								<FormHelperText sx={{ color: 'error.main' }}>
+									{errors.experiences[i].classes.message}
+								</FormHelperText>
+							)} */}
 						</Grid>
 
 						<Grid item xs={10}></Grid>
@@ -166,7 +183,7 @@ const Experiences = ({ control, register, errors }) => {
 					{errors.experiences.message}
 				</FormHelperText>
 			)}
-		</Card>
+		</Box>
 	);
 };
 

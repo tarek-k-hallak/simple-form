@@ -36,8 +36,8 @@ export const OBLIGATORY_SERVICE = [
 export const CURRENT_SITUATION = [
 	{ value: 'متفرغ', label: 'متفرغ' },
 	{
-		value: 'متفرغ جزئياً',
-		label: 'متفرغ جزئياً',
+		value: 'متفرغ جزئيا',
+		label: 'متفرغ جزئيا',
 		type: [
 			{ value: 'مدرس في مدرسة حكومية', label: 'مدرس في مدرسة حكومية' },
 			{ value: 'مدرس في مدرسة خاصة', label: 'مدرس في مدرسة خاصة' },

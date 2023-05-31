@@ -10,6 +10,11 @@ import rtlPlugin from 'stylis-plugin-rtl';
 import createCache from '@emotion/cache';
 
 const theme = createTheme({
+	palette: {
+		success: {
+			main: '#2e7d32',
+		},
+	},
 	direction: 'ltr',
 	components: {
 		MuiTextField: {
